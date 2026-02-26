@@ -57,8 +57,8 @@ app.post('/api/video-info', async (req, res) => {
         console.log('Ejecutando:', command);
 
         const { stdout, stderr } = await execPromise(command, {
-            timeout: 30000, // 30 segundos timeout
-            maxBuffer: 1024 * 1024 * 10 // 10MB buffer
+            timeout: 30000,
+            maxBuffer: 1024 * 1024 * 10,
         });
 
         if (stderr) {
@@ -128,7 +128,7 @@ app.post('/api/video-info', async (req, res) => {
 // Descargar video/audio
 app.post('/api/download', async (req, res) => {
     try {
-        const { url, format } = req.body; // format: 'video' o 'audio'
+        const { url, format } = req.body;
         
         console.log('Download request:', url, format);
         
@@ -139,51 +139,85 @@ app.post('/api/download', async (req, res) => {
             });
         }
 
-        // Crear carpeta temporal
         const tempDir = path.join(process.cwd(), 'temp');
         if (!fs.existsSync(tempDir)) {
             fs.mkdirSync(tempDir);
         }
 
-        // Obtener título del video
-        const { stdout: infoJson } = await execPromise(`yt-dlp -J "${url}"`);
+        console.log(' Video Title: ');
+        const cleanUrl = url.split('&')[0].split('?')[0] + '?v=' + url.split('v=')[1]?.split('&')[0];
+        
+        const { stdout: infoJson } = await execPromise(`yt-dlp -J "${cleanUrl}"`);
         const info = JSON.parse(infoJson);
-        const safeTitle = info.title.replace(/[^\w\s-]/gi, '').substring(0, 100);
+        
+        const safeTitle = info.title
+          .replace(/[^\w\s-]/gi, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .toLowerCase()
+          .substring(0, 50);
 
-        let filename;
         let command;
+        let expectedExt;
 
         if (format === 'audio') {
-            filename = `${safeTitle}.mp3`;
-            // Descargar solo audio y convertir a MP3
-            command = `yt-dlp -x --audio-format mp3 -o "${path.join(tempDir, filename)}" "${url}"`;
+            // Descargar audio
+            expectedExt = 'webm';
+            command = `yt-dlp -x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;        
         } else {
-            filename = `${safeTitle}.mp4`;
-            // Descargar video con mejor calidad disponible
-            command = `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" -o "${path.join(tempDir, filename)}" "${url}"`;
+            // Descargar video cin audio
+            expectedExt = 'mp4';
+            command = `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
         }
 
-        console.log('Descargando...');
-        await execPromise(command);
+        console.log('Command:', command);
+        console.log(' Downloading...');
 
-        const filePath = path.join(tempDir, filename);
+        const startTime = Date.now();
+        await execPromise(command, { 
+            timeout: 120000,
+            maxBuffer: 1024 * 1024 * 50 
+        });
+        const endTime = Date.now();
 
-        // Enviar archivo
-        res.download(filePath, filename, (err) => {
+        console.log(`Download Completed in ${(endTime - startTime) / 1000}s`);
+
+        // Buscar el archivo descargado
+        const files = fs.readdirSync(tempDir).filter(f => f.startsWith(safeTitle));
+        console.log('Files Found:', files);
+        
+        if (files.length === 0) {
+            throw new Error('The downloaded file was not found.');
+        }
+
+        const downloadedFile = files[0];
+        const filePath = path.join(tempDir, downloadedFile);
+        const fileSize = fs.statSync(filePath).size;
+        
+        console.log(`File: ${downloadedFile}`);
+        console.log(`Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
+        console.log('Sending file...');
+
+        res.download(filePath, downloadedFile, (err) => {
             if (err) {
-                console.error('rror sending file:', err);
+                console.error('Error sending file:', err);
+            } else {
+                console.log('Sent File');
             }
-            // Eliminar archivo después de enviarlo
+            
             fs.unlink(filePath, (unlinkErr) => {
-                if (unlinkErr) console.error('Error deleting temp file:', unlinkErr);
+                if (!unlinkErr) {
+                    console.log('Delete FIle');
+                }
             });
         });
 
     } catch (error) {
-        console.error('Download error:', error.message);
+        console.error('Error:', error.message);
+        
         res.status(500).json({
             success: false,
-            message: 'Download error: ' + error.message
+            message: error.message
         });
     }
 });
