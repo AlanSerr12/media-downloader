@@ -106,7 +106,7 @@ function App(){
       </main>
 
       <footer className="footer">
-        <p>Hecho por Alan</p>
+        <p>Hecho por Ing.Alan Serrano</p>
       </footer>
     </div>
   );
