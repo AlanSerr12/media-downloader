@@ -5,6 +5,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+import { title } from 'process';
 
 dotenv.config();
 
@@ -148,7 +149,7 @@ app.post('/api/download', async (req, res) => {
             fs.mkdirSync(tempDir);
         }
 
-        console.log(' Video Title: ');
+        console.log(' Format Download:', format);
         const cleanUrl = url.split('&')[0].split('?')[0] + '?v=' + url.split('v=')[1]?.split('&')[0];
 
         const { stdout: infoJson } = await execPromise(`yt-dlp -J "${cleanUrl}"`);
@@ -163,6 +164,8 @@ app.post('/api/download', async (req, res) => {
 
         let command;
         let expectedExt;
+
+        console.log(' Video Title: ', info.title);
 
         if (format === 'audio') {
             // Descargar audio
