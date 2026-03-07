@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 4000;
 
 // CORS
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
+    origin: 'http://localhost:5173',
+    credentials: true
 }));
 
 app.use(express.json());
@@ -29,9 +29,9 @@ app.get('/health', (req, res) => {
 app.post('/api/video-info', async (req, res) => {
     try {
         const { url } = req.body;
-        
+
         console.log('Request recibido:', url);
-        
+
         if (!url) {
             return res.status(400).json({
                 success: false,
@@ -108,7 +108,7 @@ app.post('/api/video-info', async (req, res) => {
 
     } catch (error) {
         console.error('Error completo:', error);
-        
+
         let errorMessage = 'Error getting video info';
         if (error.code === 'ETIMEDOUT') {
             errorMessage = 'Timeout: El video tardó mucho en responder';
@@ -117,7 +117,7 @@ app.post('/api/video-info', async (req, res) => {
         } else {
             errorMessage = error.message;
         }
-        
+
         res.status(500).json({
             success: false,
             message: errorMessage
@@ -129,9 +129,9 @@ app.post('/api/video-info', async (req, res) => {
 app.post('/api/download', async (req, res) => {
     try {
         const { url, format } = req.body;
-        
+
         console.log('Download request:', url, format);
-        
+
         if (!url) {
             return res.status(400).json({
                 success: false,
@@ -139,23 +139,27 @@ app.post('/api/download', async (req, res) => {
             });
         }
 
-        const tempDir = path.join(process.cwd(), 'temp');
+        const tempDir = process.env.NODE_ENV === 'production'
+        ? '/tmp'
+        :path.join(process.cwd(), 'temp');
+
+
         if (!fs.existsSync(tempDir)) {
             fs.mkdirSync(tempDir);
         }
 
         console.log(' Video Title: ');
         const cleanUrl = url.split('&')[0].split('?')[0] + '?v=' + url.split('v=')[1]?.split('&')[0];
-        
+
         const { stdout: infoJson } = await execPromise(`yt-dlp -J "${cleanUrl}"`);
         const info = JSON.parse(infoJson);
-        
+
         const safeTitle = info.title
-          .replace(/[^\w\s-]/gi, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .toLowerCase()
-          .substring(0, 50);
+            .replace(/[^\w\s-]/gi, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .toLowerCase()
+            .substring(0, 50);
 
         let command;
         let expectedExt;
@@ -163,7 +167,7 @@ app.post('/api/download', async (req, res) => {
         if (format === 'audio') {
             // Descargar audio
             expectedExt = 'webm';
-            command = `yt-dlp -x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;        
+            command = `yt-dlp -x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
         } else {
             // Descargar video cin audio
             expectedExt = 'mp4';
@@ -174,9 +178,9 @@ app.post('/api/download', async (req, res) => {
         console.log(' Downloading...');
 
         const startTime = Date.now();
-        await execPromise(command, { 
+        await execPromise(command, {
             timeout: 120000,
-            maxBuffer: 1024 * 1024 * 50 
+            maxBuffer: 1024 * 1024 * 50
         });
         const endTime = Date.now();
 
@@ -185,7 +189,7 @@ app.post('/api/download', async (req, res) => {
         // Buscar el archivo descargado
         const files = fs.readdirSync(tempDir).filter(f => f.startsWith(safeTitle));
         console.log('Files Found:', files);
-        
+
         if (files.length === 0) {
             throw new Error('The downloaded file was not found.');
         }
@@ -193,7 +197,7 @@ app.post('/api/download', async (req, res) => {
         const downloadedFile = files[0];
         const filePath = path.join(tempDir, downloadedFile);
         const fileSize = fs.statSync(filePath).size;
-        
+
         console.log(`File: ${downloadedFile}`);
         console.log(`Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
         console.log('Sending file...');
@@ -204,7 +208,7 @@ app.post('/api/download', async (req, res) => {
             } else {
                 console.log('Sent File');
             }
-            
+
             fs.unlink(filePath, (unlinkErr) => {
                 if (!unlinkErr) {
                     console.log('Delete FIle');
@@ -214,7 +218,7 @@ app.post('/api/download', async (req, res) => {
 
     } catch (error) {
         console.error('Error:', error.message);
-        
+
         res.status(500).json({
             success: false,
             message: error.message
