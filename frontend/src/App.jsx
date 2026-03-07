@@ -3,7 +3,7 @@ import {Download, AlertCircle} from 'lucide-react';
 import axios from 'axios';
 import './App.css';
 
-const API_URL = 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 function App(){
   const [url, setUrl] = useState('');
