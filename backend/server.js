@@ -14,9 +14,24 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // CORS
+// app.use(cors({
+//     origin: 'http://localhost:5173',
+//     credentials: true
+// }));
+
+// CORS Producción
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      'https://media-downloader-murex.vercel.app', // Front
+      'https://media-downloader-api-nrck.onrender.com' // Back
+    ]
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
