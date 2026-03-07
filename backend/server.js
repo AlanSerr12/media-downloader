@@ -69,7 +69,7 @@ app.post('/api/video-info', async (req, res) => {
         console.log('URL:', cleanUrl);
 
         // Usar yt-dlp con timeout
-        const command = `yt-dlp -J "${cleanUrl}"`;
+        const command = `./yt-dlp -J "${cleanUrl}"`;
         console.log('Ejecutando:', command);
 
         const { stdout, stderr } = await execPromise(command, {
@@ -167,7 +167,7 @@ app.post('/api/download', async (req, res) => {
         console.log(' Format Download:', format);
         const cleanUrl = url.split('&')[0].split('?')[0] + '?v=' + url.split('v=')[1]?.split('&')[0];
 
-        const { stdout: infoJson } = await execPromise(`yt-dlp -J "${cleanUrl}"`);
+        const { stdout: infoJson } = await execPromise(`./yt-dlp -J "${cleanUrl}"`);
         const info = JSON.parse(infoJson);
 
         const safeTitle = info.title
@@ -185,11 +185,11 @@ app.post('/api/download', async (req, res) => {
         if (format === 'audio') {
             // Descargar audio
             expectedExt = 'webm';
-            command = `yt-dlp -x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
+            command = `./yt-dlp -x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
         } else {
             // Descargar video cin audio
             expectedExt = 'mp4';
-            command = `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
+            command = `./yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
         }
 
         console.log('Command:', command);
