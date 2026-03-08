@@ -8,6 +8,11 @@ Aplicación web educativa para descargar videos y audio de YouTube utilizando yt
 
 Esta aplicación es **solo para fines educativos**. Solo descarga contenido del cual tengas derechos o que sea de dominio público. El usuario es responsable del uso que le dé al contenido descargado.
 
+## ⚙️ Limitaciones
+
+- **Demo en producción no disponible**: YouTube bloquea descargas desde servidores cloud. La aplicación funciona perfectamente en localhost.
+- **FFmpeg requerido para MP3**: Sin FFmpeg, el audio se descarga en formato WEBM.
+
 ## ✨ Características
 
 - ✅ Descarga videos en formato MP4
@@ -75,10 +80,10 @@ NODE_ENV=development
 ## 📸 Screenshots
 
 ### Vista principal
-![Vista principal](./screenshots/home.png)
+![Vista principal](./screenshots/Prueba2.png)
 
 ### Descarga en progreso
-![Descarga](./screenshots/download.png)
+![Descarga](./screenshots/Prueba3.png)
 
 ## 🏗️ Estructura del Proyecto
 ```
@@ -94,11 +99,6 @@ media-downloader/
 │   └── package.json
 └── README.md
 ```
-
-## ⚙️ Limitaciones
-
-- **Demo en producción no disponible**: YouTube bloquea descargas desde servidores cloud. La aplicación funciona perfectamente en localhost.
-- **FFmpeg requerido para MP3**: Sin FFmpeg, el audio se descarga en formato WEBM.
 
 ## 🔧 Troubleshooting
 
