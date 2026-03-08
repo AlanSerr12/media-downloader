@@ -2,7 +2,7 @@
 
 Aplicación web educativa para descargar videos y audio de YouTube utilizando yt-dlp.
 
-![Media Downloader](./Prueba1.png)
+![Media Downloader](./screenshots/Prueba1.png)
 
 ## ⚠️ Aviso Legal
 
