@@ -51,14 +51,14 @@ function App(){
     <div className="app">
       <header className="header">
         <Download size={32}/>
-        <h1>YouTube Downloader</h1>
-        <p>Descarga videos y audios de Youtube</p>
+        <h1>Multi-Plataforma Downloader</h1>
+        <p>Descarga videos y audios de múltiples plataformas</p>
       </header>
 
       <div className="disclaimer">
         <AlertCircle size={20}/>
         <p>Esta aplicación es solo para fines educativos. 
-          Asegúrate de respetar los derechos de autor y las políticas de YouTube al descargar contenido.
+          Asegúrate de respetar los derechos de autor y las políticas de las plataformas al descargar contenido.
         </p>
       </div>
 
@@ -66,13 +66,21 @@ function App(){
         <form onSubmit={handleGetInfo} className="form">
           <input 
           type="text" 
-          placeholder="Pega aqui la Url de Youtube" 
+          placeholder="Pega aquí la URL (YouTube, Instagram, TikTok, Twitter, Facebook)" 
           value={url} 
           onChange={(e) => setUrl(e.target.value)} 
           className="input"
           /> 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Cargando...' : 'Obtener Informacion'}
+          </button>
+          
+          <button type="button" className="btn-secondary" onClick={() => {
+            setUrl('');
+            setVideoInfo(null);
+            setError('');
+          }}>
+            Limpiar
           </button>
         </form>
 
