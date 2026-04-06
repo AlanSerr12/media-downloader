@@ -53,11 +53,13 @@ app.get('/health', (req, res) => {
 
 // Helper proxy opcional
 function buildYtDlpCommand(baseCommand) {
+    const nodeRuntime = '--js-runtimes node';
+    
     if (USE_PROXY && SCRAPER_API_KEY) {
         const proxyUrl = `http://scraperapi:${SCRAPER_API_KEY}@proxy-server.scraperapi.com:8001`;
-        return `yt-dlp --proxy "${proxyUrl}" --no-check-certificate ${baseCommand}`;
+        return `yt-dlp --proxy "${proxyUrl}" --no-check-certificate ${nodeRuntime} ${baseCommand}`;
     }
-    return `yt-dlp ${baseCommand}`;
+    return `yt-dlp ${nodeRuntime} ${baseCommand}`;
 }
 
 // Obtener info del video
