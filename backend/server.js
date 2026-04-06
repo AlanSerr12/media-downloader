@@ -99,7 +99,7 @@ app.post('/api/video-info', async (req, res) => {
         console.log('Ejecutando.....');
 
         const { stdout, stderr } = await execPromise(command, {
-            timeout: 30000,
+            timeout: 120000,
             maxBuffer: 1024 * 1024 * 10,
         });
 
