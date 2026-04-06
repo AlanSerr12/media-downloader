@@ -55,7 +55,7 @@ app.get('/health', (req, res) => {
 function buildYtDlpCommand(baseCommand) {
     if (USE_PROXY && SCRAPER_API_KEY) {
         const proxyUrl = `http://scraperapi:${SCRAPER_API_KEY}@proxy-server.scraperapi.com:8001`;
-        return `yt-dlp --proxy "${proxyUrl}" ${baseCommand}`;
+        return `yt-dlp --proxy "${proxyUrl}" --no-check-certificate ${baseCommand}`;
     }
     return `yt-dlp ${baseCommand}`;
 }
