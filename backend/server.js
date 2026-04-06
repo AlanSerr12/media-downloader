@@ -10,6 +10,10 @@ import { isPlataformSupported, getPlataform } from './utils/detectPlataform.js';
 
 dotenv.config();
 
+
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
+const USE_PROXY = process.env.USE_PROXY === 'true';
+
 const execPromise = promisify(exec);
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -39,8 +43,22 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ success: true, message: 'Media downloader API' });
+    res.json({ 
+        success: true, 
+        message: 'Media downloader API',
+        scraperApiConfigured: !!SCRAPER_API_KEY,
+        proxyEnabled: USE_PROXY
+    });
 });
+
+// Helper proxy opcional
+function buildYtDlpCommand(baseCommand) {
+    if (USE_PROXY && SCRAPER_API_KEY) {
+        const proxyUrl = `http://scraperapi:${SCRAPER_API_KEY}@proxy-server.scraperapi.com:8001`;
+        return `yt-dlp --proxy "${proxyUrl}" ${baseCommand}`;
+    }
+    return `yt-dlp ${baseCommand}`;
+}
 
 // Obtener info del video
 app.post('/api/video-info', async (req, res) => {
@@ -70,8 +88,13 @@ app.post('/api/video-info', async (req, res) => {
         console.log('URL:', cleanUrl);
 
         // Usar yt-dlp con timeout
-        const command = `yt-dlp -J "${cleanUrl}"`;
-        console.log('Ejecutando:', command);
+        const command = buildYtDlpCommand(`-J "${cleanUrl}"`);
+
+        if (USE_PROXY) {
+            console.log('Usando ScraperAPI proxy');
+        }
+
+        console.log('Ejecutando.....');
 
         const { stdout, stderr } = await execPromise(command, {
             timeout: 30000,
@@ -168,7 +191,8 @@ app.post('/api/download', async (req, res) => {
         console.log(' Format Download:', format);
         const cleanUrl = url.split('&')[0].split('?')[0] + '?v=' + url.split('v=')[1]?.split('&')[0];
 
-        const { stdout: infoJson } = await execPromise(`yt-dlp -J "${cleanUrl}"`);
+        const infoCommand = buildYtDlpCommand(`-J "${cleanUrl}"`);
+        const { stdout: infoJson } = await execPromise(infoCommand);
         const info = JSON.parse(infoJson);
 
         const safeTitle = info.title
@@ -178,23 +202,24 @@ app.post('/api/download', async (req, res) => {
             .toLowerCase()
             .substring(0, 50);
 
-        let command;
+        let baseCommand;
         let expectedExt;
 
-        console.log(' Video Title: ', info.title);
+        console.log('Video Title:', info.title);
 
         if (format === 'audio') {
-            // Descargar audio
-            expectedExt = 'webm';
-            command = `yt-dlp -x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
+            expectedExt = 'mp3';
+            baseCommand = `-x --audio-format mp3 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
         } else {
-            // Descargar video cin audio
             expectedExt = 'mp4';
-            command = `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
+            baseCommand = `-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --merge-output-format mp4 --output "${tempDir}/${safeTitle}.%(ext)s" "${cleanUrl}"`;
         }
 
-        console.log('Command:', command);
-        console.log(' Downloading...');
+        const command = buildYtDlpCommand(baseCommand);
+
+        if (USE_PROXY) {
+            console.log('Descargando con proxy.....');
+}
 
         const startTime = Date.now();
         await execPromise(command, {
@@ -246,5 +271,7 @@ app.post('/api/download', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`¿Server running on http://localhost:${PORT}`);
+    console.log(` ScraperAPI: ${SCRAPER_API_KEY ? 'Configured' : 'NOT configured'}`);
+    console.log(`Proxy Mode: ${USE_PROXY ? 'ENABLED ' : 'DISABLED'}`);
 });
